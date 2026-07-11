@@ -66,7 +66,7 @@ export function Navbar() {
 
         <div className="hidden lg:block">
           <Button variant={solid ? "primary" : "outline"} size="sm" asChild>
-            <Link href="/#contact">Become a Supplier</Link>
+            <Link href="/?type=supplier#contact">Become a Supplier</Link>
           </Button>
         </div>
 
@@ -103,7 +103,7 @@ export function Navbar() {
                 </Link>
               ))}
               <Button className="mt-6 w-full" asChild>
-                <Link href="/#contact" onClick={() => setMenuOpen(false)}>
+                <Link href="/?type=supplier#contact" onClick={() => setMenuOpen(false)}>
                   Become a Supplier
                 </Link>
               </Button>

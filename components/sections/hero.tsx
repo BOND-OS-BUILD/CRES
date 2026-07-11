@@ -59,7 +59,7 @@ export function Hero() {
             className="relative mt-10 flex flex-col gap-4 sm:flex-row"
           >
             <Button variant="primary" size="lg" asChild>
-              <Link href="/#contact">Become a Supplier</Link>
+              <Link href="/?type=supplier#contact">Become a Supplier</Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
               <Link href="/#solutions">Partner With CRES</Link>

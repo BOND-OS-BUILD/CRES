@@ -40,10 +40,10 @@ export function CtaBanner() {
         </div>
         <div className="flex shrink-0 flex-col items-start gap-5">
           <Button variant="primary" size="lg" asChild>
-            <Link href="/#contact">Become a Supplier</Link>
+            <Link href="/?type=supplier#contact">Become a Supplier</Link>
           </Button>
           <Link
-            href="/#contact"
+            href="/?type=buyer#contact"
             className="group inline-flex items-center gap-2 text-sm font-semibold text-white/70 transition-colors hover:text-white"
           >
             Partner with CRES instead

@@ -2,14 +2,16 @@
 
 import { motion } from "framer-motion";
 import { Clock, Loader2, Mail, MapPin, Phone, Send } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/lib/site-config";
-import type { ContactFormData } from "@/types";
+import { cn } from "@/lib/utils";
+import type { ContactFormData, InquiryType } from "@/types";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -17,6 +19,7 @@ const fadeUp = {
 };
 
 const initialForm: ContactFormData = {
+  inquiryType: "supplier",
   companyName: "",
   contactPerson: "",
   phone: "",
@@ -26,14 +29,56 @@ const initialForm: ContactFormData = {
   message: "",
 };
 
+const copyByType: Record<
+  InquiryType,
+  { heading: string; subtext: string; volumeLabel: string; volumePlaceholder: string; messagePlaceholder: string }
+> = {
+  supplier: {
+    heading: "Become a Supplier Partner",
+    subtext:
+      "Tell us about your kitchen or facility and our collection team will reach out to set up a scheduled pickup.",
+    volumeLabel: "Estimated Monthly UCO Available",
+    volumePlaceholder: "e.g. 200 litres",
+    messagePlaceholder: "Tell us about your kitchen operations...",
+  },
+  buyer: {
+    heading: "Partner as a Buyer",
+    subtext:
+      "Tell us about your feedstock requirements and our team will get in touch to discuss a supply arrangement.",
+    volumeLabel: "Estimated Monthly Requirement",
+    volumePlaceholder: "e.g. 1000 litres",
+    messagePlaceholder: "Tell us about your feedstock or offtake requirements...",
+  },
+};
+
 type Status = "idle" | "submitting" | "success" | "error";
 
 export function Contact() {
-  const [form, setForm] = useState<ContactFormData>(initialForm);
+  return (
+    <Suspense fallback={<ContactForm />}>
+      <ContactFormWithParams />
+    </Suspense>
+  );
+}
+
+function ContactFormWithParams() {
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type");
+  return <ContactForm initialType={type === "buyer" ? "buyer" : "supplier"} />;
+}
+
+function ContactForm({ initialType = "supplier" }: { initialType?: InquiryType }) {
+  const [form, setForm] = useState<ContactFormData>({ ...initialForm, inquiryType: initialType });
   const [status, setStatus] = useState<Status>("idle");
+
+  const copy = copyByType[form.inquiryType];
 
   const update = (field: keyof ContactFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const setInquiryType = (inquiryType: InquiryType) => {
+    setForm((prev) => ({ ...prev, inquiryType }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -47,7 +92,7 @@ export function Contact() {
       });
       if (!res.ok) throw new Error("Failed");
       setStatus("success");
-      setForm(initialForm);
+      setForm({ ...initialForm, inquiryType: form.inquiryType });
     } catch {
       setStatus("error");
     }
@@ -67,14 +112,29 @@ export function Contact() {
             Contact
           </span>
           <h2 className="text-balance font-heading text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Become a Supplier Partner
+            {copy.heading}
           </h2>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-white/60">
-            Tell us about your kitchen or facility and our collection team
-            will reach out to set up a scheduled pickup.
-          </p>
+          <p className="mt-5 max-w-lg text-base leading-relaxed text-white/60">{copy.subtext}</p>
 
-          <form onSubmit={handleSubmit} className="mt-10 grid gap-6 sm:grid-cols-2">
+          <div className="mt-8 inline-flex rounded-lg border border-white/15 p-1">
+            {(["supplier", "buyer"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setInquiryType(type)}
+                className={cn(
+                  "rounded-md px-5 py-2.5 font-mono text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
+                  form.inquiryType === type
+                    ? "bg-accent text-white"
+                    : "text-white/50 hover:text-white/80"
+                )}
+              >
+                {type === "supplier" ? "I'm a Supplier" : "I'm a Buyer"}
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-8 grid gap-6 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label className="text-white/50">Company Name *</Label>
               <Input
@@ -127,11 +187,11 @@ export function Contact() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label className="text-white/50">Estimated Monthly UCO</Label>
+              <Label className="text-white/50">{copy.volumeLabel}</Label>
               <Input
                 value={form.monthlyUco}
                 onChange={update("monthlyUco")}
-                placeholder="e.g. 200 litres"
+                placeholder={copy.volumePlaceholder}
                 className="border-white/15 bg-white/5 text-white placeholder:text-white/30"
               />
             </div>
@@ -140,7 +200,7 @@ export function Contact() {
               <Textarea
                 value={form.message}
                 onChange={update("message")}
-                placeholder="Tell us about your kitchen operations..."
+                placeholder={copy.messagePlaceholder}
                 className="border-white/15 bg-white/5 text-white placeholder:text-white/30"
               />
             </div>

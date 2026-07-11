@@ -28,19 +28,21 @@ export async function POST(request: Request) {
   try {
     const resend = new Resend(apiKey);
     const fromAddress = process.env.RESEND_FROM_EMAIL ?? "CRES Website <onboarding@resend.dev>";
+    const role = data.inquiryType === "buyer" ? "Buyer" : "Supplier";
 
     await resend.emails.send({
       from: fromAddress,
       to: siteConfig.email,
       replyTo: data.email,
-      subject: `New supplier enquiry from ${data.companyName}`,
+      subject: `New ${role.toLowerCase()} enquiry from ${data.companyName}`,
       text: [
+        `Enquiry type: ${role}`,
         `Company: ${data.companyName}`,
         `Contact person: ${data.contactPerson}`,
         `Phone: ${data.phone}`,
         `Email: ${data.email}`,
         `City: ${data.city ?? "-"}`,
-        `Estimated monthly UCO: ${data.monthlyUco ?? "-"}`,
+        `Estimated monthly ${role === "Buyer" ? "requirement" : "UCO available"}: ${data.monthlyUco ?? "-"}`,
         "",
         "Message:",
         data.message ?? "-",
