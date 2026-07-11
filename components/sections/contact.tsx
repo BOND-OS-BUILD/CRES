@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Loader2, Mail, MapPin, Phone, Send } from "lucide-react";
+import { Clock, Loader2, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState, type FormEvent } from "react";
 
@@ -81,21 +81,40 @@ function ContactForm({ initialType = "supplier" }: { initialType?: InquiryType }
     setForm((prev) => ({ ...prev, inquiryType }));
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setStatus("submitting");
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Failed");
-      setStatus("success");
-      setForm({ ...initialForm, inquiryType: form.inquiryType });
-    } catch {
+
+    const role = form.inquiryType === "buyer" ? "Buyer" : "Supplier";
+    const lines = [
+      `New ${role} enquiry — CRES Website`,
+      "",
+      `Company: ${form.companyName}`,
+      `Contact: ${form.contactPerson}`,
+      `Phone: ${form.phone}`,
+      `Email: ${form.email}`,
+      `City: ${form.city || "-"}`,
+      `Estimated monthly ${role === "Buyer" ? "requirement" : "UCO available"}: ${form.monthlyUco || "-"}`,
+    ];
+    if (form.message) lines.push("", "Message:", form.message);
+
+    const whatsappUrl = `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(lines.join("\n"))}`;
+
+    // Fire-and-forget: keep a server-side log too, without blocking WhatsApp.
+    fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    }).catch(() => {});
+
+    const opened = window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    if (!opened) {
       setStatus("error");
+      return;
     }
+
+    setStatus("success");
+    setForm({ ...initialForm, inquiryType: form.inquiryType });
   };
 
   return (
@@ -209,22 +228,23 @@ function ContactForm({ initialType = "supplier" }: { initialType?: InquiryType }
               <Button type="submit" size="lg" disabled={status === "submitting"} className="w-full sm:w-auto">
                 {status === "submitting" ? (
                   <>
-                    <Loader2 className="animate-spin" size={18} /> Submitting
+                    <Loader2 className="animate-spin" size={18} /> Opening WhatsApp
                   </>
                 ) : (
                   <>
-                    <Send size={18} /> Submit
+                    <MessageCircle size={18} /> Send via WhatsApp
                   </>
                 )}
               </Button>
               {status === "success" && (
                 <p className="mt-4 text-sm font-medium text-accent">
-                  Thank you. Our team will contact you shortly.
+                  WhatsApp opened in a new tab — hit send there to complete your enquiry.
                 </p>
               )}
               {status === "error" && (
                 <p className="mt-4 text-sm font-medium text-red-400">
-                  Something went wrong. Please try again.
+                  Your browser blocked the WhatsApp pop-up. Please allow pop-ups for
+                  this site and try again, or message us directly at {siteConfig.phone}.
                 </p>
               )}
             </div>

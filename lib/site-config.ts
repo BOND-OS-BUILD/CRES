@@ -8,6 +8,7 @@ export const siteConfig = {
   url: "https://www.gocres.in",
   email: "connect@gocres.in",
   phone: "+91 91034 99708",
+  whatsappNumber: "919103499708",
   location: "Jammu and Kashmir, India",
   hours: "Monday – Saturday, 9:00 AM – 6:30 PM IST",
 };
